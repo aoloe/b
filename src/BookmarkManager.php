@@ -2,11 +2,18 @@
 
 namespace B;
 
+function debug($label, $value) {
+    if (is_bool($value)) {
+        $value = $value ? 'true': 'false';
+    }
+    echo('<pre>'.$label.': '.print_r($value, 1).'</pre>');
+}
+
 class BookmarkManager
 {
     protected array $config;
     protected DB $db;
-    protected string $user;
+    public string $user;
     protected string $baseDir;
     public string $requestUri;
     public string $subPage = '';
@@ -30,7 +37,7 @@ class BookmarkManager
         $this->baseDir = $this->config['baseDir'];
 
         if (!is_dir($this->baseDir)) {
-            throw new \Exception('invalid baseDir in config.php');
+            throw new \Exception('invalid baseDir in config.php: '.$this->baseDir);
         }
 
         if (!is_writeable($this->baseDir)) {
@@ -82,7 +89,7 @@ class BookmarkManager
         $this->db = new DB($this->baseDir.$user.'/b.db');
     }
 
-    public function getConfig(string $key): mixed
+    public function getConfig(string $key): ?string
     {
         if (isset($this->config[$key])) {
             return $this->config[$key];

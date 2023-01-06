@@ -1,6 +1,8 @@
 <?php
 
-namespace B;
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 require_once __DIR__.'/../vendor/autoload.php';
 
@@ -29,8 +31,17 @@ if (isset($_GET['configtest'])) {
     exit();
 }
 
+$config = (include(__DIR__.'/../conf/config.php'))();
+
 try {
-    $b = new BookmarkManager($_SERVER['REQUEST_URI']);
+
+    $b = new \B\BookmarkManager($_SERVER['REQUEST_URI']);
+
+    $auth = new \B\Auth($config);
+    if (!$auth->is_logged_in($b->user)) {
+        print($auth->render_form());
+        exit();
+    }
 
     if ($b->subPage === 'bookmarklet') {
         include __DIR__.'/bookmarklet.php';
@@ -41,7 +52,9 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $postData = json_decode(file_get_contents("php://input"), true);
-        $b->handleAjaxRequest($postData);
+        if (!is_null($postData)) {
+            $b->handleAjaxRequest($postData);
+        }
     }
 
     if (!empty($_GET['filter'])) {
@@ -98,9 +111,9 @@ function dumpEntries($entries)
   foreach ($entries as $entry) {
   ?>
     <div class="entry" id="entry_<?php echo $entry['id']; ?>" data-id="<?php echo $entry['id']; ?>" data-title="<?php echo htmlspecialchars($entry['desc']); ?>">
-      <div class="title"><?php echo BookmarkManager::formatDesc($entry['desc'], false); ?></div>
+      <div class="title"><?php echo \B\BookmarkManager::formatDesc($entry['desc'], false); ?></div>
       <a class="link" target="_blank" href="<?php echo htmlspecialchars($entry['link']); ?>"><?php echo htmlspecialchars($entry['link']);  ?></a>
-      <div class="tags"><?php echo BookmarkManager::formatTags($entry['desc']); ?></div>
+      <div class="tags"><?php echo \B\BookmarkManager::formatTags($entry['desc']); ?></div>
     </div>
 
   <?php
@@ -127,6 +140,7 @@ function dumpEntries($entries)
 <div id="content">
 
 <div class="header">
+  <?= $auth->is_logged_in($b->user) ?  $auth->render_logout() : '' ?>
   <form id="filterform">
     <input id="query"
       autofocus
